@@ -1,20 +1,19 @@
-name: Deploy to IIS
+name: Deploy to IIS with Self-Hosted Runner
 
 on:
   push:
     branches:
-      - main   # o la rama que uses para producción
-  workflow_dispatch:
-  
+      - main   # Cambia si usas otra rama para producción
+
 jobs:
   build-and-deploy:
-    runs-on: windows-latest
+    runs-on: self-hosted   # importante: apunta a tu runner en el servidor
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Setup .NET
+      - name: Setup .NET 8
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
@@ -25,13 +24,10 @@ jobs:
       - name: Build
         run: dotnet build --configuration Release --no-restore
 
-      - name: Publish
-        run: dotnet publish -c Release -o ./proan
+      - name: Publish app
+        run: dotnet publish -c Release -o ./publish
 
-      # 🔹 Copiar archivos al servidor IIS (vía WebDeploy o WinRM)
-      - name: Deploy to IIS via WebDeploy
-        shell: cmd
+      - name: Deploy to IIS folder
         run: |
-          iisreset /stop
-          xcopy /s /y .\proan\* C:\inetpub\wwwroot\HolaMundoWeb
-          iisreset /start
+          Write-Host "Copiando archivos a IIS..."
+          Copy-Item -Path ".\publish\*" -Destination "C:\inetpub\wwwroot\HolaMundoWeb" -Recurse -Force
