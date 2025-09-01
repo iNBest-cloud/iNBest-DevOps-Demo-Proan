@@ -22,7 +22,19 @@ jobs:
       - name: Publish app
         run: dotnet publish -c Release -o ./publish
 
+      - name: Stop IIS site
+        run: |
+          Import-Module WebAdministration
+          Write-Host "Deteniendo sitio IIS: proan"
+          Stop-Website -Name "proan"
+
       - name: Deploy to IIS folder
         run: |
           Write-Host "Copiando archivos a IIS..."
           Copy-Item -Path ".\publish\*" -Destination "C:\inetpub\wwwroot\proan" -Recurse -Force
+
+      - name: Start IIS site
+        run: |
+          Import-Module WebAdministration
+          Write-Host "Iniciando sitio IIS: proan"
+          Start-Website -Name "proan"
