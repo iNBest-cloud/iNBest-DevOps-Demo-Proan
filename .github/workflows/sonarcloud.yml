@@ -6,7 +6,8 @@ on:
       - main
   pull_request:
     types: [opened, synchronize, reopened]
-
+  workflow_dispatch:
+    
 jobs:
   build:
     name: Build and analyze
@@ -25,6 +26,9 @@ jobs:
 
       - name: Install SonarCloud Scanner
         run: dotnet tool install --global dotnet-sonarscanner
+        
+      - name: Install Coverlet for test coverage
+        run: dotnet tool install --global coverlet.console
 
       - name: Debug token length
         run: |
@@ -38,11 +42,17 @@ jobs:
             SONAR_PROJECT_KEY: ${{ secrets.PROYK }}
             SONAR_ORG: ${{ secrets.ORG }}
         run: |
-            dotnet sonarscanner begin /k:"$env:SONAR_PROJECT_KEY" /o:"$env:SONAR_ORG" /d:sonar.login=$env:SONAR_TOKEN
-            dotnet restore
-            dotnet build --no-incremental
-            dotnet sonarscanner end /d:sonar.login=$env:SONAR_TOKEN
+          dotnet sonarscanner begin `
+            /k:"$env:SONAR_PROJECT_KEY" `
+            /o:"$env:SONAR_ORG" `
+            /d:sonar.login=$env:SONAR_TOKEN `
+            /d:sonar.exclusions="**/bin/**,**/obj/**,**/Migrations/**" `
+            /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml"
 
+          dotnet restore
+          dotnet build --no-incremental
 
+          # Correr tests con cobertura
+          dotnet test /p:CollectCoverage=true /p:CoverletOutput=./coverage/ /p:CoverletOutputFormat=opencover
 
-
+          dotnet sonarscanner end /d:sonar.login=$env:SONAR_TOKEN
