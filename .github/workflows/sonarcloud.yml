@@ -25,6 +25,14 @@ jobs:
 
       - name: Install SonarCloud Scanner
         run: dotnet tool install --global dotnet-sonarscanner
+      
+      - name: Debug secrets
+        run: |
+            echo "Project Key: ${{ secrets.PROYK }}"
+            echo "Org: ${{ secrets.ORG }}"
+            echo "Token length: ${#SONAR_TOKEN}"
+        env:
+            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       - name: Build and analyze with SonarCloud
         env:
