@@ -56,3 +56,7 @@ jobs:
           dotnet test /p:CollectCoverage=true /p:CoverletOutput=./coverage/ /p:CoverletOutputFormat=opencover
 
           dotnet sonarscanner end /d:sonar.login=$env:SONAR_TOKEN
+      - name: SonarCloud Quality Gate
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
