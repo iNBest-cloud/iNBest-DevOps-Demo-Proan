@@ -28,8 +28,13 @@ jobs:
 
       - name: Build and analyze with SonarCloud
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+            SONAR_PROJECT_KEY: ${{ secrets.PROYK }}
+            SONAR_ORG: ${{ secrets.ORG }}
         run: |
-          dotnet sonarscanner begin /k:"$SONAR_PROJECT_KEY" /o:"$SONAR_ORG" /d:sonar.token="$SONAR_TOKEN"
-          dotnet build
-          dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+          dotnet sonarscanner begin /k:"$SONAR_PROJECT_KEY" /o:"$SONAR_ORG" /d:sonar.login="$SONAR_TOKEN"
+          dotnet restore
+          dotnet build --no-incremental
+          dotnet sonarscanner end /d:sonar.login="$SONAR_TOKEN"
+
+
