@@ -21,7 +21,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x' # Ajusta a tu versión de .NET
+          dotnet-version: '9.0.x' # Ajusta a tu versión de .NET
 
       - name: Install SonarCloud Scanner
         run: dotnet tool install --global dotnet-sonarscanner
@@ -30,7 +30,7 @@ jobs:
         run: |
             echo "Project Key: ${{ secrets.PROYK }}"
             echo "Org: ${{ secrets.ORG }}"
-            echo "Token length: ${#SONAR_TOKEN}"
+            echo "Token length: ${{ secrets.SONAR_TOKEN }}"
         env:
             SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
