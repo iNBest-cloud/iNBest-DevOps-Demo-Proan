@@ -26,11 +26,15 @@ jobs:
       - name: Install SonarCloud Scanner
         run: dotnet tool install --global dotnet-sonarscanner
       
-      - name: Debug secrets
+      - name: Debug SONAR_TOKEN
         run: |
-            echo "Project Key: ${{ secrets.PROYK }}"
-            echo "Org: ${{ secrets.ORG }}"
-            echo "Token length: ${{ secrets.SONAR_TOKEN }}"
+            Write-Output "Token length: $($env:SONAR_TOKEN.Length)"
+        env:
+            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: Debug token length
+        run: |
+            Write-Output "Token length: $($env:SONAR_TOKEN.Length)"
         env:
             SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
