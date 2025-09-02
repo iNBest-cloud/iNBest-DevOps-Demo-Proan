@@ -1,0 +1,35 @@
+name: SonarCloud
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  build:
+    name: Build and analyze
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Requerido para análisis completo
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x' # Ajusta a tu versión de .NET
+
+      - name: Install SonarCloud Scanner
+        run: dotnet tool install --global dotnet-sonarscanner
+
+      - name: Build and analyze with SonarCloud
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          dotnet sonarscanner begin /k:"${{ secrets.proyectkey}}" /o:"${{ secrets.ORG}}" /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+          dotnet build
+          dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
