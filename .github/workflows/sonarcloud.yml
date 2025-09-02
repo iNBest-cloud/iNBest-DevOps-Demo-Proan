@@ -38,9 +38,11 @@ jobs:
             SONAR_PROJECT_KEY: ${{ secrets.PROYK }}
             SONAR_ORG: ${{ secrets.ORG }}
         run: |
-          dotnet sonarscanner begin /k:"$SONAR_PROJECT_KEY" /o:"$SONAR_ORG" /d:sonar.login="$SONAR_TOKEN"
-          dotnet restore
-          dotnet build --no-incremental
-          dotnet sonarscanner end /d:sonar.login="$SONAR_TOKEN"
+            dotnet sonarscanner begin /k:"$env:SONAR_PROJECT_KEY" /o:"$env:SONAR_ORG" /d:sonar.login=$env:SONAR_TOKEN
+            dotnet restore
+            dotnet build --no-incremental
+            dotnet sonarscanner end /d:sonar.login=$env:SONAR_TOKEN
+
+
 
 
