@@ -58,6 +58,6 @@ jobs:
           dotnet sonarscanner end /d:sonar.login=$env:SONAR_TOKEN
 
       - name: SonarCloud Quality Gate
-        uses: SonarSource/sonarcloud-github-action@a3b5e0a89c18f9a2fdbf2f83c91902e14c9e8a9f
+        uses: SonarSource/sonarcloud-github-action@v2
         env:
             SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
