@@ -1,9 +1,9 @@
-name: SonarCloud Branches
+name: SonarCloud
 
 on:
   push:
     branches:
-      - main
+      - '**'
   pull_request:
     types: [opened, synchronize, reopened]
   workflow_dispatch:
@@ -56,3 +56,4 @@ jobs:
           dotnet test /p:CollectCoverage=true /p:CoverletOutput=./coverage/ /p:CoverletOutputFormat=opencover
 
           dotnet sonarscanner end /d:sonar.login=$env:SONAR_TOKEN
+
