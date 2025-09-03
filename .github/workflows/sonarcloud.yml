@@ -57,14 +57,15 @@ jobs:
       - name: Check Quality Gate via API
         if: ${{ github.event_name == 'pull_request' }}
         run: |
-          echo "Checking SonarCloud Quality Gate..."
-          status=$(curl -s -u ${{ secrets.SONAR_TOKEN }}: \
-            "https://sonarcloud.io/api/qualitygates/project_status?projectKey=${{ secrets.PROYK }}" \
-            | jq -r '.projectStatus.status')
-          
-          echo "Quality Gate Status: $status"
-          if [ "$status" != "OK" ]; then
-            echo "Quality Gate failed!"
+          Write-Output "Checking SonarCloud Quality Gate..."
+          $status = curl -s -u "${{ secrets.SONAR_TOKEN }}:" `
+            "https://sonarcloud.io/api/qualitygates/project_status?projectKey=${{ secrets.PROYK }}" |
+            ConvertFrom-Json | Select-Object -ExpandProperty projectStatus | Select-Object -ExpandProperty status
+
+          Write-Output "Quality Gate Status: $status"
+          if ($status -ne "OK") {
+            Write-Error "❌ Quality Gate failed!"
             exit 1
-          fi
+          }
+
 
