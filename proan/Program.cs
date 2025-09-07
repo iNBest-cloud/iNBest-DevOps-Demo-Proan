@@ -24,6 +24,7 @@ app.MapGet("/", () =>
     );
 });
 
+
 app.UseCors();
 
 // ❌ Secret hardcodeado en código fuente
