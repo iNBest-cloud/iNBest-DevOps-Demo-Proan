@@ -75,6 +75,7 @@ app.MapGet("/user", async (HttpContext ctx) =>
     return Results.Ok(rows);
 });
 
+
 // ❌ Criptografía débil (MD5) + SHA1
 app.MapGet("/hash", (HttpContext ctx) =>
 {
