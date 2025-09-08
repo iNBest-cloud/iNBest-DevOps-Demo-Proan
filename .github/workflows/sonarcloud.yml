@@ -58,58 +58,26 @@ jobs:
         run: Start-Sleep -Seconds 30
 
       - name: Check Quality Gate via API
+        shell: pwsh
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_PROJECT_KEY: ${{ secrets.PROYK }}
         run: |
-          $maxAttempts = 10
-          $delay = 15
-          for ($i=1; $i -le $maxAttempts; $i++) {
-            Write-Output "Attempt $i: Checking SonarCloud Quality Gate..."
+          $url = "https://sonarcloud.io/api/qualitygates/project_status?projectKey=$env:SONAR_PROJECT_KEY"
+          $jsonResponse = Invoke-RestMethod -Uri $url -Headers @{ Authorization = "Basic $([Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("$env:SONAR_TOKEN:"))) }
+          $status = $jsonResponse.projectStatus.status
+          Write-Output "Quality Gate Status: $status"
 
-            # Realiza la solicitud a la API
-            $response = curl -s -u "$env:SONAR_TOKEN:" `
-              "https://sonarcloud.io/api/qualitygates/project_status?projectKey=$env:SONAR_PROJECT_KEY"
-
-            # Verifica si la respuesta está vacía o nula
-            if (-not $response) {
-              Write-Error "No response received from SonarCloud API."
-              exit 1
-            }
-
-            # Imprime la respuesta completa para depuración
-            Write-Output "API Response: $response"
-
-            # Convierte la respuesta a JSON
-            $jsonResponse = $response | ConvertFrom-Json
-
-            # Si hay errores en la respuesta, los imprimimos y salimos con error
-            if ($jsonResponse.errors) {
-              Write-Error "Error from API: $($jsonResponse.errors | ForEach-Object { $_.msg })"
-              exit 1
-            }
-
-            # Extrae el estado del Quality Gate
-            $status = $jsonResponse.projectStatus.status
-            Write-Output "Quality Gate Status: $status"
-
-            # Si el estado es OK, terminamos el ciclo
-            if ($status -eq "OK") {
-              Write-Host "Quality Gate passed!"
-              exit 0
-            }
-            # Si el estado es ERROR, fallamos el build
-            elseif ($status -eq "ERROR") {
-              Write-Error "Quality Gate failed! Merge will be blocked."
-              exit 1
-            }
-
-            # Si el estado no es ni OK ni ERROR, espera y reintenta
-            Write-Output "Status is $status. Retrying in $delay seconds..."
-            Start-Sleep -Seconds $delay
+          if ($status -eq "OK") {
+            Write-Host "Quality Gate passed!"
+            exit 0
           }
-
-          # Si no se pudo determinar el estado después de varios intentos
-          Write-Error "Quality Gate status could not be determined after $maxAttempts attempts."
-          exit 1
+          elseif ($status -eq "ERROR") {
+            Write-Error "Quality Gate failed!"
+            exit 1
+          }
+          else {
+            Write-Output "Status is $status. Build pending..."
+            exit 1
+          }
 
