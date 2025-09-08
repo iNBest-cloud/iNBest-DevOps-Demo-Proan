@@ -68,7 +68,7 @@ jobs:
           for ($i=1; $i -le $maxAttempts; $i++) {
             Write-Output "Attempt $i: Checking SonarCloud Quality Gate..."
             $response = curl -s -u "$env:SONAR_TOKEN:" `
-              "https://sonarcloud.io/api/qualitygates/project_status?projectKey=$env:SONAR_PROJECT_KEY" |
+              "https://sonarcloud.io/api/qualitygates/project_status?projectKey=$SONAR_PROJECT_KEY" |
               ConvertFrom-Json
 
             $status = $response.projectStatus.status
