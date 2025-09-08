@@ -1,4 +1,4 @@
-name: Deploy to IIS with Self-Hosted Runner
+name: Deploy to IIS with Self-Hosted Runner Main
 
 on:
   push:
