@@ -2,6 +2,8 @@ name: SonarCloud Quality Gate
 
 on:
   pull_request:
+    branches:
+      - main
     types: [opened, synchronize, reopened]
   workflow_dispatch:
 
@@ -61,16 +63,28 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_PROJECT_KEY: ${{ secrets.PROYK }}
         run: |
-          Write-Output "Checking SonarCloud Quality Gate..."
-          $status = curl -s -u "${env:SONAR_TOKEN}:" `
-            "https://sonarcloud.io/api/qualitygates/project_status?projectKey=$env:SONAR_PROJECT_KEY" |
-            ConvertFrom-Json | Select-Object -ExpandProperty projectStatus | Select-Object -ExpandProperty status
+          $maxAttempts = 10
+          $delay = 15
+          for ($i=1; $i -le $maxAttempts; $i++) {
+            Write-Output "Attempt $i: Checking SonarCloud Quality Gate..."
+            $response = curl -s -u "$env:SONAR_TOKEN:" `
+              "https://sonarcloud.io/api/qualitygates/project_status?projectKey=$SONAR_PROJECT_KEY" |
+              ConvertFrom-Json
 
-          Write-Output "Quality Gate Status: $status"
+            $status = $response.projectStatus.status
+            Write-Output "Quality Gate Status: $status"
 
-          if ($status -ne "OK") {
-            Write-Error "Quality Gate failed! Merge will be blocked."
-            exit 1
-          } else {
-            Write-Host "Quality Gate passed!"
+            if ($status -eq "OK") {
+              Write-Host "Quality Gate passed!"
+              exit 0
+            } elseif ($status -eq "ERROR") {
+              Write-Error "Quality Gate failed! Merge will be blocked."
+              exit 1
+            }
+
+            Write-Output "Status is $status. Retrying in $delay seconds..."
+            Start-Sleep -Seconds $delay
           }
+
+          Write-Error "Quality Gate status could not be determined after $maxAttempts attempts."
+          exit 1
