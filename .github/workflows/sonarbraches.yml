@@ -60,8 +60,8 @@ jobs:
           SONAR_PROJECT_KEY: ${{ secrets.PROYK }}
         run: |
           Write-Output "Checking SonarCloud Quality Gate..."
-          $status = curl -s -u "${env:SONAR_TOKEN}:" `
-            "https://sonarcloud.io/api/qualitygates/project_status?projectKey=$env:SONAR_PROJECT_KEY" |
+          $status = curl -s -u "${SONAR_TOKEN}:" `
+            "https://sonarcloud.io/api/qualitygates/project_status?projectKey=$SONAR_PROJECT_KEY" |
             ConvertFrom-Json | Select-Object -ExpandProperty projectStatus | Select-Object -ExpandProperty status
 
           Write-Output "Quality Gate Status: $status"
