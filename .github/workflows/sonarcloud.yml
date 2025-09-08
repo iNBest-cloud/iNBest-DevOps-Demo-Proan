@@ -10,7 +10,7 @@ on:
 
 jobs:
   build:
-    name: Build and analyze
+    name: Build and analyze (pull_request)
     runs-on: windows-latest
 
     steps:
