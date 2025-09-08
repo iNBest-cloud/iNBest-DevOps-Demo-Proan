@@ -1,4 +1,4 @@
-name: Deploy to IIS with Self-Hosted Runner Main
+name: Deploy to IIS with Self-Hosted Runner QA
 
 on:
   push:
@@ -27,22 +27,22 @@ jobs:
         run: |
           Import-Module WebAdministration
           Write-Host "Deteniendo sitio y App Pool de IIS"
-          Stop-Website -Name "proan"
-          Stop-WebAppPool -Name "proan"
+          Stop-Website -Name "proan-qa"
+          Stop-WebAppPool -Name "proan-qa"
 
       - name: Deploy to IIS folder
         run: |
           Write-Host "Limpiando y copiando archivos a IIS..."
-          Remove-Item "C:\inetpub\wwwroot\proan\*" -Recurse -Force
-          Copy-Item -Path ".\publish\*" -Destination "C:\inetpub\wwwroot\proan" -Recurse -Force
+          Remove-Item "C:\inetpub\wwwroot\proan-qa\*" -Recurse -Force
+          Copy-Item -Path ".\publish\*" -Destination "C:\inetpub\wwwroot\proan-qa" -Recurse -Force
 
       - name: Start IIS site and app pool
         if: always()
         run: |
           Import-Module WebAdministration
-          Write-Host "Iniciando sitio y App Pool de IIS: proan"
-          Start-WebAppPool -Name "proan"
-          Start-Website -Name "proan"
+          Write-Host "Iniciando sitio y App Pool de IIS: proan QA"
+          Start-WebAppPool -Name "proan-qa"
+          Start-Website -Name "proan-qa"
 
       - name: Ensure IIS is running after failure
         if: failure()
@@ -50,4 +50,4 @@ jobs:
           Import-Module WebAdministration
           Write-Host " Hubo un error, reiniciando IIS para no dejar el sitio caído..."
           Start-WebAppPool -Name "DefaultAppPool"
-          Start-Website -Name "proan"
+          Start-Website -Name "proan-qa"
