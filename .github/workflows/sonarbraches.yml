@@ -9,51 +9,65 @@ on:
   workflow_dispatch:
     
 jobs:
+  # 1. Primer check: Build and analyze
   build:
-    name: SonarCloud Quality Gate / Build and analyze (pull_request)
+    name: SonarCloud / Build and analyze (pull_request)
     runs-on: windows-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Requerido para análisis completo
+          fetch-depth: 0
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x' # Ajusta a tu versión de .NET
+          dotnet-version: '9.0.x'
 
       - name: Install SonarCloud Scanner
         run: dotnet tool install --global dotnet-sonarscanner
-        
+
       - name: Install Coverlet for test coverage
         run: dotnet tool install --global coverlet.console
 
-      - name: Debug token length
-        run: |
-            Write-Output "Token length: $($env:SONAR_TOKEN.Length)"
-        env:
-            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
       - name: Build and analyze with SonarCloud
         env:
-            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-            SONAR_PROJECT_KEY: ${{ secrets.PROYK }}
-            SONAR_ORG: ${{ secrets.ORG }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_PROJECT_KEY: ${{ secrets.PROYK }}
+          SONAR_ORG: ${{ secrets.ORG }}
         run: |
           dotnet sonarscanner begin `
             /k:"$env:SONAR_PROJECT_KEY" `
             /o:"$env:SONAR_ORG" `
-            /d:sonar.login=$env:SONAR_TOKEN `
+            /d:sonar.login="$env:SONAR_TOKEN" `
             /d:sonar.exclusions="**/bin/**,**/obj/**,**/Migrations/**" `
             /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml"
 
           dotnet restore
           dotnet build --no-incremental
-
-          # Correr tests con cobertura
           dotnet test /p:CollectCoverage=true /p:CoverletOutput=./coverage/ /p:CoverletOutputFormat=opencover
+          dotnet sonarscanner end /d:sonar.login="$env:SONAR_TOKEN"
 
-          dotnet sonarscanner end /d:sonar.login=$env:SONAR_TOKEN
+  # 2. Segundo check: Quality Gate
+  quality-gate:
+    name: SonarCloud Quality Gate / Build and analyze (pull_request)
+    runs-on: windows-latest
+    needs: build
 
+    steps:
+      - name: Check Quality Gate via API
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_PROJECT_KEY: ${{ secrets.PROYK }}
+        run: |
+          Write-Output "Checking SonarCloud Quality Gate..."
+          $status = curl -s -u "${env:SONAR_TOKEN}:" `
+            "https://sonarcloud.io/api/qualitygates/project_status?projectKey=$env:SONAR_PROJECT_KEY" |
+            ConvertFrom-Json | Select-Object -ExpandProperty projectStatus | Select-Object -ExpandProperty status
+
+          Write-Output "Quality Gate Status: $status"
+          if ($status -ne "OK") {
+            Write-Error "Quality Gate failed!"
+            exit 1
+          }
