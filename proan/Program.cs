@@ -33,7 +33,6 @@ const string ApiKey = "super-secreto-12345";
 // ❌ Deshabilitar HTTPS redirection (mejor dejarlo activado en apps reales)
 // app.UseHttpsRedirection();
 
-
 // ❌ Exposición de información sensible en logs + credenciales hardcodeadas
 app.MapGet("/login", (HttpContext ctx) =>
 {
