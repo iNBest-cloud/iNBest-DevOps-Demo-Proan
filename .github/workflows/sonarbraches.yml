@@ -4,7 +4,8 @@ on:
   push:
     branches:
       - '**'
-  pull_request:        # ✅ Para que se ejecute también en PRs
+  pull_request:
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
 
 jobs:
