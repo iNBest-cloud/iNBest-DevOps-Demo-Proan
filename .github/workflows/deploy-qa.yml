@@ -3,7 +3,7 @@ name: Deploy to IIS with Self-Hosted Runner QA
 on:
   push:
     branches:
-      - main
+      - qa
   workflow_dispatch:
     
 jobs:
