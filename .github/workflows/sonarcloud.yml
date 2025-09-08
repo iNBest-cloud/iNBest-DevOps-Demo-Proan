@@ -53,9 +53,12 @@ jobs:
   quality-gate:
     name: SonarCloud Quality Gate / Build and analyze (pull_request)
     runs-on: windows-latest
-    needs: build
+    needs: build   # espera al análisis
 
     steps:
+      - name: Wait for SonarCloud processing
+        run: Start-Sleep -Seconds 30
+
       - name: Check Quality Gate via API
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -67,7 +70,10 @@ jobs:
             ConvertFrom-Json | Select-Object -ExpandProperty projectStatus | Select-Object -ExpandProperty status
 
           Write-Output "Quality Gate Status: $status"
+
           if ($status -ne "OK") {
-            Write-Error "Quality Gate failed!"
+            Write-Error "Quality Gate failed! Merge will be blocked."
             exit 1
+          } else {
+            Write-Host "Quality Gate passed!"
           }
