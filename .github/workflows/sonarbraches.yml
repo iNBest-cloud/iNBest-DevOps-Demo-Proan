@@ -5,7 +5,7 @@ on:
     branches:
       - '**'
   workflow_dispatch:
-    
+
 jobs:
   # 1. Primer check: Build and analyze
   build:
@@ -50,22 +50,26 @@ jobs:
   # 2. Segundo check: Quality Gate
   quality-gate:
     name: SonarCloud Quality Gate / Build and analyze (pull_request)
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     needs: build
 
     steps:
+      - name: Install jq
+        run: sudo apt-get install -y jq
+
       - name: Check Quality Gate via API
+        shell: bash
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_PROJECT_KEY: ${{ secrets.PROYK }}
         run: |
-          Write-Output "Checking SonarCloud Quality Gate..."
-          $status = curl -s -u "${SONAR_TOKEN}:" `
-            "https://sonarcloud.io/api/qualitygates/project_status?projectKey=$SONAR_PROJECT_KEY" |
-            ConvertFrom-Json | Select-Object -ExpandProperty projectStatus | Select-Object -ExpandProperty status
+          echo "Checking SonarCloud Quality Gate..."
+          status=$(curl -s -u "${SONAR_TOKEN}:" \
+            "https://sonarcloud.io/api/qualitygates/project_status?projectKey=${SONAR_PROJECT_KEY}" \
+            | jq -r '.projectStatus.status')
 
-          Write-Output "Quality Gate Status: $status"
-          if ($status -ne "OK") {
-            Write-Error "Quality Gate failed!"
+          echo "Quality Gate Status: $status"
+          if [ "$status" != "OK" ]; then
+            echo "Quality Gate failed!"
             exit 1
-          }
+          fi
