@@ -1,0 +1,52 @@
+name: Deploy to IIS with Self-Hosted Runner
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Publish app
+        run: dotnet publish -c Release -o ./publish
+
+      - name: Stop IIS site and app pool
+        run: |
+          Import-Module WebAdministration
+          Write-Host "Deteniendo sitio y App Pool de IIS"
+          Stop-Website -Name "proan"
+          Stop-WebAppPool -Name "proan"
+
+      - name: Deploy to IIS folder
+        run: |
+          Write-Host "Limpiando y copiando archivos a IIS..."
+          Remove-Item "C:\inetpub\wwwroot\proan\*" -Recurse -Force
+          Copy-Item -Path ".\publish\*" -Destination "C:\inetpub\wwwroot\proan" -Recurse -Force
+
+      - name: Start IIS site and app pool
+        if: always()
+        run: |
+          Import-Module WebAdministration
+          Write-Host "Iniciando sitio y App Pool de IIS: proan"
+          Start-WebAppPool -Name "proan"
+          Start-Website -Name "proan"
+
+      - name: Ensure IIS is running after failure
+        if: failure()
+        run: |
+          Import-Module WebAdministration
+          Write-Host " Hubo un error, reiniciando IIS para no dejar el sitio caído..."
+          Start-WebAppPool -Name "DefaultAppPool"
+          Start-Website -Name "proan"
