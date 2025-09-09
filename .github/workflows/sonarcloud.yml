@@ -1,7 +1,7 @@
 name: SonarCloud
 
 on:
-  push:
+  pull_request:
     branches:
       - main
   pull_request:
@@ -24,16 +24,17 @@ jobs:
         with:
           dotnet-version: '9.0.x' # Ajusta a tu versión de .NET
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
       - name: Install SonarCloud Scanner
         run: dotnet tool install --global dotnet-sonarscanner
         
       - name: Install Coverlet for test coverage
         run: dotnet tool install --global coverlet.console
+
+      - name: Debug token length
+        run: |
+            Write-Output "Token length: $($env:SONAR_TOKEN.Length)"
+        env:
+            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       - name: Build and analyze with SonarCloud
         env:
@@ -45,18 +46,13 @@ jobs:
             /k:"$env:SONAR_PROJECT_KEY" `
             /o:"$env:SONAR_ORG" `
             /d:sonar.login=$env:SONAR_TOKEN `
-            /d:sonar.host.url="https://sonarcloud.io" `
-            /d:sonar.sources="." `
-            /d:sonar.inclusions="**/*.cs,**/*.py" `
-            /d:sonar.exclusions="**/bin/**,**/obj/**,**/Migrations/**,__pycache__/**,*.pyc" `
-            /d:sonar.scm.provider=git `
+            /d:sonar.exclusions="**/bin/**,**/obj/**,**/Migrations/**" `
             /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml"
 
           dotnet restore
           dotnet build --no-incremental
 
-          # Ejecutar tests con cobertura .NET
+          # Correr tests con cobertura
           dotnet test /p:CollectCoverage=true /p:CoverletOutput=./coverage/ /p:CoverletOutputFormat=opencover
 
           dotnet sonarscanner end /d:sonar.login=$env:SONAR_TOKEN
-
