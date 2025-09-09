@@ -1,6 +1,6 @@
 # iNBest-DevOps-Demo-Proan
 
-# 🛠️ Caso Práctico DevOps: GitHub + SonarQube + IIS 
+# 🛠️ Caso Práctico DevOps: GitHub + SonarQube + IIS
 
 Este documento presenta el temario del caso práctico orientado a la adopción de prácticas DevOps utilizando **GitHub**, **SonarQube** y **IIS**.
 
