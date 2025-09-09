@@ -1,27 +1,28 @@
-name: SonarCloud Quality Gate
+name: SonarCloud
 
 on:
-  pull_request:
+  push:
     branches:
       - main
+  pull_request:
     types: [opened, synchronize, reopened]
   workflow_dispatch:
-
+    
 jobs:
   build:
-    name: SonarCloud / Build and analyze
+    name: Build and analyze
     runs-on: windows-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0  # Requerido para análisis completo
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'
+          dotnet-version: '9.0.x' # Ajusta a tu versión de .NET
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -30,20 +31,20 @@ jobs:
 
       - name: Install SonarCloud Scanner
         run: dotnet tool install --global dotnet-sonarscanner
-
-      - name: Install Coverlet for test coverage (.NET)
+        
+      - name: Install Coverlet for test coverage
         run: dotnet tool install --global coverlet.console
 
       - name: Build and analyze with SonarCloud
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_PROJECT_KEY: ${{ secrets.PROYK }}
-          SONAR_ORG: ${{ secrets.ORG }}
+            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+            SONAR_PROJECT_KEY: ${{ secrets.PROYK }}
+            SONAR_ORG: ${{ secrets.ORG }}
         run: |
           dotnet sonarscanner begin `
             /k:"$env:SONAR_PROJECT_KEY" `
             /o:"$env:SONAR_ORG" `
-            /d:sonar.login="$env:SONAR_TOKEN" `
+            /d:sonar.login=$env:SONAR_TOKEN `
             /d:sonar.host.url="https://sonarcloud.io" `
             /d:sonar.sources="." `
             /d:sonar.inclusions="**/*.cs,**/*.py" `
@@ -53,13 +54,16 @@ jobs:
 
           dotnet restore
           dotnet build --no-incremental
+
+          # Ejecutar tests con cobertura .NET
           dotnet test /p:CollectCoverage=true /p:CoverletOutput=./coverage/ /p:CoverletOutputFormat=opencover
-          dotnet sonarscanner end /d:sonar.login="$env:SONAR_TOKEN"
+
+          dotnet sonarscanner end /d:sonar.login=$env:SONAR_TOKEN
 
   quality-gate:
     name: SonarCloud Quality Gate
     runs-on: ubuntu-latest
-    needs: build
+    needs: build   # Este job espera a que termine el análisis
 
     steps:
       - name: SonarCloud Quality Gate check
