@@ -1,0 +1,72 @@
+name: SonarCloud .NET 9 (all branches)
+
+on:
+  push:
+    branches: ['**']        # analiza todas las ramas
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  sonarcloud:
+    runs-on: ubuntu-latest
+
+    env:
+      # Mapeo de tus secrets a variables de entorno
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_PROJECT_KEY: ${{ secrets.PROYK }}
+      SONAR_ORG: ${{ secrets.ORG }}
+
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0     # recomendado por Sonar para blame/PRs
+
+      - name: Setup .NET 9 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Cache NuGet
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Install SonarScanner for .NET (global tool)
+        run: dotnet tool install --global dotnet-sonarscanner
+
+      - name: Restore
+        run: dotnet restore
+
+      # BEGIN: inicia el análisis y declara parámetros clave (.NET usa begin/build/test/end)
+      - name: SonarScanner Begin
+        run: |
+          dotnet sonarscanner begin \
+            /k:"${{ env.SONAR_PROJECT_KEY }}" \
+            /o:"${{ env.SONAR_ORG }}" \
+            /d:sonar.host.url="https://sonarcloud.io" \
+            /d:sonar.token="${{ env.SONAR_TOKEN }}" \
+            /d:sonar.sourceEncoding="UTF-8" \
+            /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml"
+        env:
+          PATH: $HOME/.dotnet/tools:$PATH
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      # Genera cobertura en formato OpenCover (requiere paquete coverlet.collector en los proyectos de test)
+      - name: Test with coverage (OpenCover)
+        run: |
+          dotnet test --no-build --configuration Release \
+            /p:CollectCoverage=true \
+            /p:CoverletOutputFormat=opencover \
+            /p:CoverletOutput=./TestResults/coverage
+
+      # END: finaliza y sube resultados a SonarCloud
+      - name: SonarScanner End
+        run: dotnet sonarscanner end /d:sonar.token="${{ env.SONAR_TOKEN }}"
+        env:
+          PATH: $HOME/.dotnet/tools:$PATH
