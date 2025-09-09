@@ -1,8 +1,8 @@
-name: SonarCloud .NET 9 (all branches)
+name: SonarCloud .NET 9 + Quality Gate
 
 on:
   push:
-    branches: ['**']        # analiza todas las ramas
+    branches: ['**']      # analiza todas las ramas
   pull_request:
     types: [opened, synchronize, reopened]
 
@@ -37,21 +37,13 @@ jobs:
       - name: Install SonarScanner for .NET (global tool)
         run: dotnet tool install --global dotnet-sonarscanner
 
-      # 👇 clave: exportar la carpeta de tools al PATH para los siguientes steps
       - name: Add .NET global tools to PATH
         run: echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
-
-      # opcional pero útil para diagnosticar
-      - name: Verify tools
-        run: |
-          which dotnet || true
-          which dotnet-sonarscanner || true
-          dotnet tool list -g
 
       - name: Restore
         run: dotnet restore
 
-      - name: SonarScanner Begin
+      - name: SonarScanner Begin (wait for Quality Gate)
         run: |
           dotnet sonarscanner begin \
             /k:"${{ env.SONAR_PROJECT_KEY }}" \
@@ -60,7 +52,9 @@ jobs:
             /d:sonar.token="${{ env.SONAR_TOKEN }}" \
             /d:sonar.sourceEncoding="UTF-8" \
             /d:sonar.projectBaseDir="${{ github.workspace }}" \
-            /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml"
+            /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml" \
+            /d:sonar.qualitygate.wait=true \
+            /d:sonar.qualitygate.timeout=600   # opcional (segundos). default=300
 
       - name: Build
         run: dotnet build --no-restore --configuration Release
@@ -72,5 +66,5 @@ jobs:
             /p:CoverletOutputFormat=opencover \
             /p:CoverletOutput=./TestResults/coverage
 
-      - name: SonarScanner End
+      - name: SonarScanner End (publishes analysis & waits QG)
         run: dotnet sonarscanner end /d:sonar.token="${{ env.SONAR_TOKEN }}"
