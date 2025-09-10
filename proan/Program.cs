@@ -1,6 +1,6 @@
 var builder = WebApplication.CreateBuilder(args);
 var app = builder.Build();
 
-app.MapGet("/", () => "Despliegue completo Ramas Main, sonar Actualizado");
+app.MapGet("/", () => "Demo 10/09/2025");
 
 app.Run();
